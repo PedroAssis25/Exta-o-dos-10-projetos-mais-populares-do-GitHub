@@ -1,0 +1,43 @@
+import requests
+from bs4 import BeautifulSoup
+import csv
+
+# URL da página de tendências do GitHub
+url = "https://github.com/trending"
+
+# Solicitação HTTP para obter o conteúdo da página
+response = requests.get(url)
+soup = BeautifulSoup(response.text, 'html.parser')
+
+# Lista para armazenar os dados dos projetos
+projects = []
+
+# Seleciona os 10 primeiros repositórios na página
+repos = soup.find_all('article', class_='Box-row')[:10]
+
+for repo in repos:
+    # Extrai o nome do repositório
+    repo_name = repo.find('h2').text.strip().replace('\n', '').replace(' ', '')
+    
+    # Extrai a descrição do repositório
+    description_tag = repo.find('p', class_='col-9 color-fg-muted my-1 pr-4')
+    description = description_tag.text.strip() if description_tag else 'No description'
+
+    # Extrai a linguagem principal do repositório
+    language_tag = repo.find('span', itemprop='programmingLanguage')
+    language = language_tag.text.strip() if language_tag else 'Not specified'
+
+    # Extrai o número de estrelas do repositório
+    stars_tag = repo.find('a', class_='Link--muted d-inline-block mr-3')
+    stars = stars_tag.text.strip() if stars_tag else '0'
+
+    # Adiciona os dados à lista de projetos
+    projects.append([repo_name, description, language, stars])
+
+# Escreve os dados no arquivo CSV
+with open('github.csv', 'w', newline='', encoding='utf-8') as csvfile:
+    writer = csv.writer(csvfile, delimiter=';')
+    writer.writerow(['Repository Name', 'Description', 'Language', 'Stars'])
+    writer.writerows(projects)
+
+print("Dados extraídos com sucesso e gravados em github.csv")
